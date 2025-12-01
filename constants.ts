@@ -25,7 +25,7 @@ export const INITIAL_INVOICE: InvoiceData = {
   senderAddress: 'Rukan Cordoba Blok No. H63',
   clientName: 'PT SAN THAI',
   clientEmail: '',
-  clientAddress: '',
+  clientAddress: '-',
   currency: 'IDR',
   taxRate: 11,
   showItemDates: true,
@@ -64,7 +64,7 @@ export const INITIAL_INVOICE: InvoiceData = {
     },
     {
       id: '4',
-      date: new Date("2025-09-02T10:30:00Z").toISOString().split('T')[0],
+      date: new Date("2025-09-12T10:30:00Z").toISOString().split('T')[0],
       description: 'Robusta Lampung Roasted Bean',
       quantity: 1,
       unit: 'kg',

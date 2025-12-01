@@ -1,10 +1,9 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { InvoiceData, AppStatus, LineItem } from './types';
 import { INITIAL_INVOICE } from './constants';
 import InvoiceEditor from './components/InvoiceEditor';
 import InvoicePreview from './components/InvoicePreview';
-import { Printer, Download, Sparkles, Loader2, AlertCircle, Trash2, CheckCircle2, Layers, ArrowLeft, FileText } from 'lucide-react';
+import { Printer, Download, Sparkles, Loader2, AlertCircle, Trash2, CheckCircle2, Layers, ArrowLeft, FileText, Archive } from 'lucide-react';
 import { generateInvoiceFromText } from './services/geminiService';
 
 const STORAGE_KEY = 'genai-invoice-draft';
@@ -108,6 +107,61 @@ export default function App() {
         console.error("PDF generation failed", err);
         setIsDownloading(false);
     });
+  };
+
+  const handleDownloadAll = async () => {
+    setIsDownloading(true);
+    // @ts-ignore
+    if (typeof window.html2pdf === 'undefined' || typeof window.JSZip === 'undefined' || typeof window.saveAs === 'undefined') {
+        alert("Required libraries are still loading. Please try again in a moment.");
+        setIsDownloading(false);
+        return;
+    }
+
+    // @ts-ignore
+    const zip = new JSZip();
+
+    const promises = splitInvoices.map(async (inv, index) => {
+        const element = document.getElementById(`split-invoice-${index}`);
+        if(!element) return;
+        
+        const opt = {
+            margin: 0,
+            filename: `Invoice-${inv.invoiceNumber}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+              scale: 2, 
+              useCORS: true, 
+              logging: false, 
+              scrollY: 0, 
+              windowWidth: document.documentElement.offsetWidth, 
+              letterRendering: true 
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Get PDF as blob
+        try {
+            // @ts-ignore
+            const blob = await window.html2pdf().set(opt).from(element).output('blob');
+            zip.file(`Invoice-${inv.invoiceNumber}.pdf`, blob);
+        } catch (e) {
+            console.error(`Failed to generate PDF for ${inv.invoiceNumber}`, e);
+        }
+    });
+
+    try {
+        await Promise.all(promises);
+        const content = await zip.generateAsync({ type: "blob" });
+        const dateStr = new Date().toISOString().split('T')[0];
+        // @ts-ignore
+        window.saveAs(content, `Invoices-Split-${dateStr}.zip`);
+    } catch (e) {
+        console.error("Error zipping files", e);
+        alert("Failed to generate ZIP file.");
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const handleReset = () => {
@@ -285,18 +339,43 @@ export default function App() {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
+        
+        {/* Hidden Container for Batch PDF Generation */}
+        {/* We render all split invoices here, invisible to the user but visible to the PDF generator */}
+        <div className="absolute top-0 left-0 w-full opacity-0 pointer-events-none -z-50 h-0 overflow-hidden">
+          {splitInvoices.map((inv, idx) => (
+            <div key={`split-wrapper-${idx}`} style={{ width: '210mm' }}>
+               <InvoicePreview data={inv} containerId={`split-invoice-${idx}`} />
+            </div>
+          ))}
+        </div>
         
         {isSplitMode ? (
           /* Split View Layout */
           <div className="flex flex-col lg:flex-row gap-8">
              {/* Left Sidebar: Invoice List */}
              <div className="w-full lg:w-1/4 no-print space-y-4">
+                
+                {/* Download All Button */}
+                <button
+                  onClick={handleDownloadAll}
+                  disabled={isDownloading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-600 text-white rounded-lg text-sm font-bold hover:bg-brand-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Archive className="w-4 h-4" />
+                  )}
+                  Download All (ZIP)
+                </button>
+
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-brand-500"/> Generated Invoices
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                     {splitInvoices.map((inv, idx) => (
                       <button
                         key={idx}
@@ -318,7 +397,7 @@ export default function App() {
                     ))}
                   </div>
                   <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                    <p>Select an invoice to preview or print.</p>
+                    <p>Select an invoice to preview. Use "Download All" to get everything.</p>
                   </div>
                 </div>
              </div>

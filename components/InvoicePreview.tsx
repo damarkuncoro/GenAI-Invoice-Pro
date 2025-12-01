@@ -1,13 +1,13 @@
-
 import React from 'react';
 import { InvoiceData } from '../types';
 import { CURRENCIES } from '../constants';
 
 interface InvoicePreviewProps {
   data: InvoiceData;
+  containerId?: string;
 }
 
-const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
+const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data, containerId = "invoice-preview-content" }) => {
   const currencyInfo = CURRENCIES.find(c => c.code === data.currency) || CURRENCIES[0];
   
   const formatMoney = (amount: number) => {
@@ -34,7 +34,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
     <div className="invoice-preview-wrapper bg-white shadow-xl rounded-sm w-full max-w-[210mm] mx-auto print:shadow-none">
       
       {/* This inner container is what gets converted to PDF. It must be clean white. */}
-      <div id="invoice-preview-content" className="w-full min-h-[297mm] p-12 text-gray-800 relative flex flex-col bg-white">
+      <div id={containerId} className="w-full min-h-[297mm] p-12 text-gray-800 relative flex flex-col bg-white">
         
         {/* Top Section: Logo (Full Width Row) */}
         {data.logoImage && (
