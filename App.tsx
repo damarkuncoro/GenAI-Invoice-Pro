@@ -93,8 +93,8 @@ export default function App() {
         scale: 2, 
         useCORS: true, 
         logging: false,
-        scrollY: 0, // Critical fix: Force capturing from top of element
-        windowWidth: document.documentElement.offsetWidth, // Ensure full width capture
+        scrollY: 0, 
+        windowWidth: document.documentElement.offsetWidth,
         letterRendering: true
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -111,9 +111,14 @@ export default function App() {
 
   const handleDownloadAll = async () => {
     setIsDownloading(true);
+    
     // @ts-ignore
-    if (typeof window.html2pdf === 'undefined' || typeof window.JSZip === 'undefined' || typeof window.saveAs === 'undefined') {
-        alert("Required libraries are still loading. Please try again in a moment.");
+    const html2pdf = window.html2pdf;
+    // @ts-ignore
+    const JSZip = window.JSZip;
+
+    if (!html2pdf || !JSZip) {
+        alert("PDF or ZIP library is not ready. Please refresh the page.");
         setIsDownloading(false);
         return;
     }
@@ -143,7 +148,7 @@ export default function App() {
         // Get PDF as blob
         try {
             // @ts-ignore
-            const blob = await window.html2pdf().set(opt).from(element).output('blob');
+            const blob = await html2pdf().set(opt).from(element).output('blob');
             zip.file(`Invoice-${inv.invoiceNumber}.pdf`, blob);
         } catch (e) {
             console.error(`Failed to generate PDF for ${inv.invoiceNumber}`, e);
@@ -154,8 +159,23 @@ export default function App() {
         await Promise.all(promises);
         const content = await zip.generateAsync({ type: "blob" });
         const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `Invoices-Split-${dateStr}.zip`;
+        
+        // Attempt to use FileSaver's saveAs if available, otherwise fallback
         // @ts-ignore
-        window.saveAs(content, `Invoices-Split-${dateStr}.zip`);
+        if (window.saveAs) {
+            // @ts-ignore
+            window.saveAs(content, filename);
+        } else {
+             const url = URL.createObjectURL(content);
+             const a = document.createElement('a');
+             a.href = url;
+             a.download = filename;
+             document.body.appendChild(a);
+             a.click();
+             document.body.removeChild(a);
+             URL.revokeObjectURL(url);
+        }
     } catch (e) {
         console.error("Error zipping files", e);
         alert("Failed to generate ZIP file.");
@@ -179,7 +199,7 @@ export default function App() {
     }
 
     const groupedItems: Record<string, LineItem[]> = {};
-    const noDateKey = invoice.date; // Default to invoice date if item has no date
+    const noDateKey = invoice.date; 
 
     invoice.items.forEach(item => {
       const dateKey = item.date && item.date.trim() !== '' ? item.date : noDateKey;
@@ -198,18 +218,15 @@ export default function App() {
 
     const newInvoices: InvoiceData[] = dates.map((date, index) => {
       const dateCompact = date.replace(/-/g, '');
-      // Generate a sequence suffix based on the index
       const suffix = String(index + 1).padStart(3, '0');
       
       return {
         ...invoice,
-        invoiceNumber: `INV-${dateCompact}-${suffix}`, // New number based on item date
-        date: date, // Set invoice date to item date
-        // Calculate a simplistic due date (e.g. 14 days after item date) if needed, 
-        // or just keep original. Let's keep original or set it same as date for now.
+        invoiceNumber: `INV-${dateCompact}-${suffix}`, 
+        date: date,
         dueDate: invoice.dueDate, 
         items: groupedItems[date],
-        showItemDates: false, // Often redundant if the whole invoice is for that date
+        showItemDates: false, 
         notes: `${invoice.notes ? invoice.notes + '\n\n' : ''}Split invoice for date: ${date}`
       };
     });

@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
-import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, User, Hash, Percent, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle, FileText } from 'lucide-react';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
+import { DatePicker } from './DatePicker';
 
 interface InvoiceEditorProps {
   data: InvoiceData;
@@ -12,6 +13,7 @@ const MAX_DESC_LENGTH = 300;
 
 const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeCurrency = CURRENCIES.find(c => c.code === data.currency) || CURRENCIES[0];
 
   const updateField = (field: keyof InvoiceData, value: any) => {
     onChange({ ...data, [field]: value });
@@ -62,11 +64,13 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Currency</label>
           <div className="relative">
-             <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold pointer-events-none w-5 text-center">
+                {activeCurrency.symbol}
+             </div>
             <select 
               value={data.currency}
               onChange={(e) => updateField('currency', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
             >
               {CURRENCIES.map(c => (
                 <option key={c.code} value={c.code}>{c.code} - {c.symbol}</option>
@@ -139,23 +143,18 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Date</label>
-              <div className="relative">
-                <input 
-                  type="date" 
-                  value={data.date}
-                  onChange={(e) => updateField('date', e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                />
-              </div>
+              <DatePicker 
+                value={data.date} 
+                onChange={(val) => updateField('date', val)} 
+              />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Due Date</label>
-               <input 
-                  type="date" 
-                  disabled={data.showDueDate === false}
+               <DatePicker 
                   value={data.dueDate}
-                  onChange={(e) => updateField('dueDate', e.target.value)}
-                  className={`w-full p-2 border rounded-md text-sm ${data.showDueDate === false ? 'bg-gray-50 text-gray-400 border-gray-200' : 'border-gray-300'}`}
+                  onChange={(val) => updateField('dueDate', val)}
+                  disabled={data.showDueDate === false}
+                  className={data.showDueDate === false ? 'opacity-50' : ''}
                 />
             </div>
          </div>
@@ -361,12 +360,10 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                 <div className="flex gap-2 flex-wrap">
                    {data.showItemDates !== false && (
                    <div className="w-32">
-                      <label className="text-[10px] text-gray-500 uppercase">Date</label>
-                      <input 
-                        type="date" 
+                      <label className="text-[10px] text-gray-500 uppercase block mb-1">Date</label>
+                      <DatePicker 
                         value={item.date || ''}
-                        onChange={(e) => updateItem(item.id, 'date', e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        onChange={(val) => updateItem(item.id, 'date', val)}
                       />
                    </div>
                    )}
@@ -399,13 +396,18 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                    </div>
                    <div className="w-28 flex-grow relative">
                       <label className="text-[10px] text-gray-500 uppercase">Rate</label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        value={item.rate}
-                        onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                        className={`w-full p-2 border rounded-md text-sm bg-white outline-none transition ${item.rate < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none font-medium">
+                          {activeCurrency.symbol}
+                        </span>
+                        <input 
+                          type="number" 
+                          min="0"
+                          value={item.rate}
+                          onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                          className={`w-full pl-9 pr-2 py-2 border rounded-md text-sm bg-white outline-none transition ${item.rate < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
+                        />
+                      </div>
                       {item.rate < 0 && (
                         <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
                            <AlertCircle className="w-3 h-3" />
