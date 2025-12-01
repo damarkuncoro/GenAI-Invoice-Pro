@@ -25,6 +25,8 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
   const total = subtotal + taxAmount;
   
   const showDates = data.showItemDates !== false;
+  const logoAlign = data.logoAlignment || 'right';
+  const logoBg = data.logoBackgroundColor || 'transparent';
 
   return (
     // Outer wrapper handles the visual presentation (shadow, centering) on the screen
@@ -34,17 +36,25 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
       {/* This inner container is what gets converted to PDF. It must be clean white. */}
       <div id="invoice-preview-content" className="w-full min-h-[297mm] p-12 text-gray-800 relative flex flex-col bg-white">
         
-        {/* Header */}
+        {/* Top Section: Logo (Full Width Row) */}
+        {data.logoImage && (
+          <div className={`mb-8 flex ${logoAlign === 'center' ? 'justify-center' : logoAlign === 'left' ? 'justify-start' : 'justify-end'}`}>
+            <div className="inline-block rounded overflow-hidden" style={{ backgroundColor: logoBg }}>
+               <img src={data.logoImage} alt="Logo" className="h-20 object-contain max-w-[300px] p-2" />
+            </div>
+          </div>
+        )}
+
+        {/* Header Info Grid */}
         <div className="flex justify-between items-start mb-12">
+          {/* Left Column: Invoice Title & Number */}
           <div>
             <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">INVOICE</h1>
             <p className="text-gray-500 font-medium">#{data.invoiceNumber}</p>
           </div>
+
+          {/* Right Column: Sender Info */}
           <div className="text-right">
-            {data.logoImage && (
-                <img src={data.logoImage} alt="Logo" className="h-16 ml-auto mb-2 object-contain max-w-[200px]" />
-            )}
-            
             {(data.showNameWithLogo || !data.logoImage) && (
                  <h2 className="text-xl font-bold text-gray-800">{data.senderName}</h2>
             )}
@@ -143,10 +153,20 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* Notes / Footer */}
-        <div className="mt-auto pt-8 border-t border-gray-100">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notes & Terms</h3>
-          <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.notes}</p>
+        {/* Notes & Terms Footer */}
+        <div className="mt-auto pt-8 border-t border-gray-100 space-y-6">
+          {data.notes && (
+            <div>
+               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notes</h3>
+               <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.notes}</p>
+            </div>
+          )}
+          {data.terms && (
+            <div>
+               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Terms & Conditions</h3>
+               <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.terms}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

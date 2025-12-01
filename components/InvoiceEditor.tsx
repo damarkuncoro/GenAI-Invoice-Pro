@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette } from 'lucide-react';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
 
@@ -184,7 +184,10 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
            
            <div className="flex items-center gap-4">
               {data.logoImage ? (
-                  <div className="relative bg-white border border-gray-200 rounded p-2 flex items-center justify-center h-16 w-auto min-w-[64px]">
+                  <div 
+                    className="relative border border-gray-200 rounded p-2 flex items-center justify-center h-16 w-auto min-w-[64px]"
+                    style={{ backgroundColor: data.logoBackgroundColor || 'white' }}
+                  >
                       <img src={data.logoImage} alt="Logo preview" className="max-h-12 max-w-[150px] object-contain" />
                   </div>
               ) : (
@@ -211,6 +214,55 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                 <p className="text-[10px] text-gray-400 mt-1">Replaces "Business Name" in invoice header</p>
               </div>
            </div>
+
+           {/* Logo Configuration Controls */}
+           {data.logoImage && (
+             <div className="mt-4 pt-3 border-t border-gray-200 grid grid-cols-2 gap-4">
+               <div>
+                 <label className="text-[10px] font-semibold text-gray-500 uppercase mb-2 block">Alignment</label>
+                 <div className="flex bg-white rounded-md p-1 border border-gray-200 shadow-sm">
+                    {[
+                      { val: 'left', icon: AlignLeft },
+                      { val: 'center', icon: AlignCenter },
+                      { val: 'right', icon: AlignRight }
+                    ].map((opt) => (
+                        <button
+                          key={opt.val}
+                          onClick={() => updateField('logoAlignment', opt.val)}
+                          className={`flex-1 py-1.5 flex justify-center items-center rounded transition-colors ${data.logoAlignment === opt.val ? 'bg-brand-50 text-brand-600' : 'text-gray-400 hover:bg-gray-50'}`}
+                          title={opt.val}
+                        >
+                          <opt.icon className="w-4 h-4" />
+                        </button>
+                    ))}
+                 </div>
+               </div>
+               <div>
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase mb-2 block flex items-center gap-1">
+                    <Palette className="w-3 h-3"/> Background
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200 shadow-sm shrink-0">
+                      <input
+                        type="color"
+                        value={data.logoBackgroundColor || '#ffffff'}
+                        onChange={(e) => updateField('logoBackgroundColor', e.target.value)}
+                        className="absolute -top-2 -left-2 w-12 h-12 p-0 cursor-pointer border-none"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={data.logoBackgroundColor}
+                        onChange={(e) => updateField('logoBackgroundColor', e.target.value)}
+                        placeholder="transparent"
+                        className="w-full p-1.5 text-xs border border-gray-300 rounded"
+                      />
+                    </div>
+                  </div>
+               </div>
+             </div>
+           )}
         </div>
 
         <div className="grid grid-cols-1 gap-3">
@@ -356,17 +408,29 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
         </div>
       </div>
 
-      {/* Notes */}
+      {/* Notes & Terms */}
       <div className="space-y-4">
          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
-           <FileText className="w-4 h-4 text-brand-500"/> Terms & Notes
+           <FileText className="w-4 h-4 text-brand-500"/> Notes & Terms
         </h3>
-        <textarea 
-          value={data.notes}
-          onChange={(e) => updateField('notes', e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
-          placeholder="Enter notes or terms..."
-        />
+        <div>
+           <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
+           <textarea 
+             value={data.notes}
+             onChange={(e) => updateField('notes', e.target.value)}
+             className="w-full p-2 border border-gray-300 rounded-md text-sm h-16 resize-none"
+             placeholder="e.g. Thanks for your business!"
+           />
+        </div>
+        <div>
+           <label className="block text-xs font-semibold text-gray-500 mb-1">Terms & Conditions</label>
+           <textarea 
+             value={data.terms}
+             onChange={(e) => updateField('terms', e.target.value)}
+             className="w-full p-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
+             placeholder="e.g. Payment due in 14 days. Please include invoice number."
+           />
+        </div>
       </div>
 
     </div>

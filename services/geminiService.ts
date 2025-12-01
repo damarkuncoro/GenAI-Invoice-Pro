@@ -20,7 +20,8 @@ export const generateInvoiceFromText = async (promptText: string): Promise<Parti
     4. Extract specific dates for line items if mentioned.
     5. GENERATE Invoice Number with format "INV-{YYYYMMDD}-{Sequence}" (e.g. INV-20231025-001) based on the Invoice Date.
     6. For Line Items: If no specific date is mentioned for an item, generate a date for it that falls strictly within the range of the Invoice Date and the Due Date (inclusive).
-    7. Today's date is ${new Date().toISOString().split('T')[0]}.
+    7. Separate General Notes (e.g., "Thanks for business") from Terms & Conditions (e.g., "Payment due in 30 days", "Bank Transfer details").
+    8. Today's date is ${new Date().toISOString().split('T')[0]}.
     
     Text to process: "${promptText}"`,
     config: {
@@ -36,7 +37,8 @@ export const generateInvoiceFromText = async (promptText: string): Promise<Parti
           clientName: { type: Type.STRING },
           clientAddress: { type: Type.STRING },
           currency: { type: Type.STRING, description: "Currency code e.g. IDR, USD" },
-          notes: { type: Type.STRING },
+          notes: { type: Type.STRING, description: "General friendly notes or comments" },
+          terms: { type: Type.STRING, description: "Legal terms, payment instructions, bank details, penalties" },
           items: {
             type: Type.ARRAY,
             items: {

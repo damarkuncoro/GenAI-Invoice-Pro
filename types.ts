@@ -25,8 +25,11 @@ export interface InvoiceData {
   showDueDate?: boolean;
   showNameWithLogo?: boolean;
   notes: string;
+  terms: string;
   items: LineItem[];
   logoImage?: string;
+  logoAlignment?: 'left' | 'center' | 'right';
+  logoBackgroundColor?: string;
 }
 
 export enum AppStatus {

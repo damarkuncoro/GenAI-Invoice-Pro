@@ -32,8 +32,11 @@ export const INITIAL_INVOICE: InvoiceData = {
   showTax: false,
   showDueDate: true,
   showNameWithLogo: false,
-  notes: 'URS Coffee. Terima kasih!',
+  notes: 'Terima kasih atas kepercayaan Anda!',
+  terms: 'Pembayaran mohon ditransfer ke rekening BCA.\nNo. Rek: 1234567890\na.n. URS Coffee',
   logoImage: '',
+  logoAlignment: 'right',
+  logoBackgroundColor: 'transparent',
   items: [
     {
       id: '1',

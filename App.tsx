@@ -1,18 +1,44 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { InvoiceData, AppStatus } from './types';
 import { INITIAL_INVOICE } from './constants';
 import InvoiceEditor from './components/InvoiceEditor';
 import InvoicePreview from './components/InvoicePreview';
-import { Printer, Download, Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { Printer, Download, Sparkles, Loader2, AlertCircle, Trash2 } from 'lucide-react';
 import { generateInvoiceFromText } from './services/geminiService';
 
+const STORAGE_KEY = 'genai-invoice-draft';
+
 export default function App() {
-  const [invoice, setInvoice] = useState<InvoiceData>(INITIAL_INVOICE);
+  // Initialize state from localStorage if available
+  const [invoice, setInvoice] = useState<InvoiceData>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Merge with INITIAL_INVOICE to ensure structure integrity if schema changes
+        return { ...INITIAL_INVOICE, ...parsed };
+      }
+    } catch (e) {
+      console.error("Failed to load invoice draft", e);
+    }
+    return INITIAL_INVOICE;
+  });
+
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [prompt, setPrompt] = useState<string>('');
   const [showAiModal, setShowAiModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Auto-save effect
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(invoice));
+    } catch (e) {
+      console.error("Failed to save invoice draft (quota exceeded?)", e);
+    }
+  }, [invoice]);
 
   const handlePrint = () => {
     window.print();
@@ -51,6 +77,13 @@ export default function App() {
         console.error("PDF generation failed", err);
         setIsDownloading(false);
     });
+  };
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to create a new invoice? This will clear your current draft.")) {
+      setInvoice(INITIAL_INVOICE);
+      localStorage.removeItem(STORAGE_KEY);
+    }
   };
 
   const handleAiGenerate = async () => {
@@ -107,6 +140,14 @@ export default function App() {
               </button>
               
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
+
+              <button 
+                onClick={handleReset}
+                title="Clear draft and start new"
+                className="flex items-center justify-center p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
 
               <button 
                 onClick={handleDownload}
