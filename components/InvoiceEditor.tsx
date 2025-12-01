@@ -1,9 +1,10 @@
-
-import React, { useRef } from 'react';
-import { Plus, Trash2, User, Hash, Percent, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle, FileText, GripVertical } from 'lucide-react';
+import React, { useRef, useState, useCallback } from 'react';
+import { Plus, Trash2, User, Hash, Percent, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle, FileText, GripVertical, Crop, ZoomIn } from 'lucide-react';
+import Cropper from 'react-easy-crop';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
 import { DatePicker } from './DatePicker';
+import getCroppedImg, { Area } from '../utils/cropImage';
 
 interface InvoiceEditorProps {
   data: InvoiceData;
@@ -19,6 +20,13 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
   // Drag and Drop Refs
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
+
+  // Cropping State
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
   const updateField = (field: keyof InvoiceData, value: any) => {
     onChange({ ...data, [field]: value });
@@ -69,21 +77,55 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
     dragItem.current = position;
     // Set drag effect
     e.dataTransfer.effectAllowed = "move";
-    // We can set a custom drag image here if we want, but default is usually fine
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
     dragOverItem.current = position;
   };
 
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        updateField('logoImage', reader.result as string);
+        setCropImage(reader.result as string);
+        setIsCropping(true);
+        // Reset crop state
+        setZoom(1);
+        setCrop({ x: 0, y: 0 });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveCrop = async () => {
+    if (cropImage && croppedAreaPixels) {
+      try {
+        const croppedImageBase64 = await getCroppedImg(cropImage, croppedAreaPixels);
+        if (croppedImageBase64) {
+          updateField('logoImage', croppedImageBase64);
+        }
+      } catch (e) {
+        console.error("Failed to crop image", e);
+      } finally {
+        setIsCropping(false);
+        setCropImage(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+      }
+    }
+  };
+
+  const handleCancelCrop = () => {
+    setIsCropping(false);
+    setCropImage(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = '';
     }
   };
 
@@ -106,7 +148,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-8">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-8 relative">
       
       {/* Settings Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
@@ -385,6 +427,16 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
            <FileText className="w-4 h-4 text-brand-500"/> Items
         </h3>
         <div className="space-y-3">
+          {data.items.length === 0 && (
+            <div className="py-8 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50 flex flex-col items-center justify-center text-center">
+               <div className="bg-white p-2 rounded-full shadow-sm mb-2">
+                 <FileText className="w-5 h-5 text-gray-300" />
+               </div>
+               <p className="text-sm font-medium text-gray-500">No items added yet</p>
+               <p className="text-xs text-gray-400 mt-1">Click "Add Line Item" to start building your invoice</p>
+            </div>
+          )}
+
           {data.items.map((item, index) => (
             <div 
               key={item.id} 
@@ -550,6 +602,66 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
             </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {isCropping && cropImage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+             <div className="p-4 border-b flex justify-between items-center">
+               <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                 <Crop className="w-5 h-5 text-brand-600"/> Adjust Logo
+               </h3>
+               <button onClick={handleCancelCrop} className="text-gray-400 hover:text-gray-600">
+                 <X className="w-5 h-5" />
+               </button>
+             </div>
+             
+             <div className="relative h-64 bg-gray-100">
+                <Cropper
+                  image={cropImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={undefined} // Free aspect ratio
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                  objectFit="contain"
+                />
+             </div>
+
+             <div className="p-4 space-y-4">
+               <div className="flex items-center gap-3">
+                  <ZoomIn className="w-4 h-4 text-gray-400" />
+                  <input
+                    type="range"
+                    value={zoom}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    aria-labelledby="Zoom"
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                  />
+               </div>
+               
+               <div className="flex gap-3">
+                 <button 
+                   onClick={handleCancelCrop}
+                   className="flex-1 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   onClick={handleSaveCrop}
+                   className="flex-1 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-md transition"
+                 >
+                   Apply & Save
+                 </button>
+               </div>
+             </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
