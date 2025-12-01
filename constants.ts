@@ -23,7 +23,7 @@ export const INITIAL_INVOICE: InvoiceData = {
   senderName: 'URS Coffee',
   senderEmail: 'Jakarta Utara, Indonesia',
   senderAddress: 'Rukan Cordoba Blok No. H63',
-  clientName: 'Shantei',
+  clientName: 'PT SAN THAI',
   clientEmail: '',
   clientAddress: '',
   currency: 'IDR',
