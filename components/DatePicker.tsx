@@ -138,7 +138,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       </div>
 
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-lg shadow-xl border border-gray-200 z-[60] w-64 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute top-full left-0 mt-2 p-4 bg-white rounded-lg shadow-xl border border-gray-200 z-[60] w-64">
            {/* Header */}
            <div className="flex justify-between items-center mb-4 gap-2">
               <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-full text-gray-600 transition flex-shrink-0">
