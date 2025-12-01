@@ -91,6 +91,20 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
     fileInputRef.current?.click();
   };
 
+  // Calculate Totals for Summary
+  const subtotal = data.items.reduce((acc, item) => acc + (item.quantity * item.rate), 0);
+  const taxAmount = (data.showTax !== false) ? subtotal * (data.taxRate / 100) : 0;
+  const total = subtotal + taxAmount;
+
+  const formatMoney = (amount: number) => {
+    return new Intl.NumberFormat(activeCurrency.locale, {
+      style: 'currency',
+      currency: activeCurrency.code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-8">
       
@@ -476,12 +490,37 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
               </div>
             </div>
           ))}
-          <button 
-            onClick={addItem}
-            className="w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-brand-500 hover:text-brand-500 transition flex items-center justify-center gap-2 text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" /> Add Line Item
-          </button>
+
+          {/* Buttons and Summary Section */}
+          <div className="space-y-4">
+             <button 
+                onClick={addItem}
+                className="w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-500 hover:border-brand-500 hover:text-brand-500 transition flex items-center justify-center gap-2 text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" /> Add Line Item
+             </button>
+
+             {/* Live Total Summary */}
+             <div className="bg-gray-50 rounded-md p-4 border border-gray-100 flex flex-col sm:flex-row justify-end items-end sm:items-center gap-4">
+                 <div className="text-right space-y-1 w-full sm:w-auto min-w-[200px]">
+                    <div className="flex justify-between text-xs text-gray-500">
+                        <span>Subtotal:</span>
+                        <span className="font-medium text-gray-700">{formatMoney(subtotal)}</span>
+                    </div>
+                    {data.showTax !== false && (
+                       <div className="flex justify-between text-xs text-gray-500">
+                           <span>Tax ({data.taxRate}%):</span>
+                           <span className="font-medium text-gray-700">{formatMoney(taxAmount)}</span>
+                       </div>
+                    )}
+                    <div className="flex justify-between text-sm font-bold text-gray-900 border-t border-gray-200 pt-2 mt-1">
+                        <span>Total:</span>
+                        <span className="text-brand-700">{formatMoney(total)}</span>
+                    </div>
+                 </div>
+             </div>
+          </div>
+
         </div>
       </div>
 
