@@ -21,8 +21,8 @@ export const INITIAL_INVOICE: InvoiceData = {
   date: dateStr,
   dueDate: dueDateStr,
   senderName: 'URS Coffee',
-  senderEmail: 'orders@urscoffee.com',
-  senderAddress: 'Rukan Cordoba Blok No. H63, Jakarta Utara, Indonesia',
+  senderEmail: 'Jakarta Utara, Indonesia',
+  senderAddress: 'Rukan Cordoba Blok No. H63',
   clientName: 'Shantei',
   clientEmail: '',
   clientAddress: '',
@@ -40,7 +40,7 @@ export const INITIAL_INVOICE: InvoiceData = {
   items: [
     {
       id: '1',
-      date: getRandomDate(dateStr, dueDateStr),
+      date: new Date("2025-12-01T10:30:00Z").toISOString().split('T')[0],
       description: 'Robusta Lampung Roasted Bean',
       quantity: 1,
       unit: 'kg',
@@ -48,7 +48,7 @@ export const INITIAL_INVOICE: InvoiceData = {
     },
     {
       id: '2',
-      date: getRandomDate(dateStr, dueDateStr),
+      date: new Date("2025-10-28T10:30:00Z").toISOString().split('T')[0],
       description: 'Robusta Lampung Roasted Bean',
       quantity: 1,
       unit: 'kg',
@@ -56,7 +56,7 @@ export const INITIAL_INVOICE: InvoiceData = {
     },
     {
       id: '3',
-      date: getRandomDate(dateStr, dueDateStr),
+      date: new Date("2025-09-16T10:30:00Z").toISOString().split('T')[0],
       description: 'Gula Aren Cair',
       quantity: 2,
       unit: 'liter',
@@ -64,15 +64,15 @@ export const INITIAL_INVOICE: InvoiceData = {
     },
     {
       id: '4',
-      date: getRandomDate(dateStr, dueDateStr),
-      description: 'Gula Aren Cair',
+      date: new Date("2025-09-02T10:30:00Z").toISOString().split('T')[0],
+      description: 'Robusta Lampung Roasted Bean',
       quantity: 1,
-      unit: 'liter',
-      rate: 75000
+      unit: 'kg',
+      rate: 135000
     },
     {
       id: '5',
-      date: getRandomDate(dateStr, dueDateStr),
+      date: new Date("2025-08-22T10:30:00Z").toISOString().split('T')[0],
       description: 'Gula Aren Cair',
       quantity: 3,
       unit: 'liter',

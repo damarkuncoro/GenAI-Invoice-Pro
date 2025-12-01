@@ -1,6 +1,5 @@
-
 import React, { useRef } from 'react';
-import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette } from 'lucide-react';
+import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle } from 'lucide-react';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
 
@@ -8,6 +7,8 @@ interface InvoiceEditorProps {
   data: InvoiceData;
   onChange: (data: InvoiceData) => void;
 }
+
+const MAX_DESC_LENGTH = 300;
 
 const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -339,12 +340,24 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
           {data.items.map((item) => (
             <div key={item.id} className="flex flex-col sm:flex-row gap-2 items-start p-3 bg-gray-50 rounded-md border border-gray-100 group">
               <div className="flex-grow space-y-2 w-full">
-                <input 
-                  placeholder="Description"
-                  value={item.description}
-                  onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
-                />
+                <div className="relative">
+                    <input 
+                      maxLength={MAX_DESC_LENGTH}
+                      placeholder="Description"
+                      value={item.description}
+                      onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                      className={`w-full p-2 pr-16 border rounded-md text-sm bg-white outline-none transition ${
+                          item.description.length >= MAX_DESC_LENGTH 
+                          ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100' 
+                          : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
+                      }`}
+                    />
+                    <div className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none transition-colors ${
+                        item.description.length >= MAX_DESC_LENGTH ? 'text-red-500 font-bold' : 'text-gray-400 opacity-50'
+                    }`}>
+                       {item.description.length}/{MAX_DESC_LENGTH}
+                    </div>
+                </div>
                 <div className="flex gap-2 flex-wrap">
                    {data.showItemDates !== false && (
                    <div className="w-32">
@@ -357,7 +370,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                       />
                    </div>
                    )}
-                   <div className="w-20">
+                   <div className="w-20 relative">
                       <label className="text-[10px] text-gray-500 uppercase">Qty</label>
                       <input 
                         type="number" 
@@ -365,8 +378,14 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                         step="0.01"
                         value={item.quantity}
                         onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        className={`w-full p-2 border rounded-md text-sm bg-white outline-none transition ${item.quantity < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
                       />
+                      {item.quantity < 0 && (
+                        <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
+                           <AlertCircle className="w-3 h-3" />
+                           <span>Min 0</span>
+                        </div>
+                      )}
                    </div>
                    <div className="w-20">
                       <label className="text-[10px] text-gray-500 uppercase">Unit</label>
@@ -378,15 +397,21 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
                         className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
                       />
                    </div>
-                   <div className="w-28 flex-grow">
+                   <div className="w-28 flex-grow relative">
                       <label className="text-[10px] text-gray-500 uppercase">Rate</label>
                       <input 
                         type="number" 
                         min="0"
                         value={item.rate}
                         onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        className={`w-full p-2 border rounded-md text-sm bg-white outline-none transition ${item.rate < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
                       />
+                      {item.rate < 0 && (
+                        <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
+                           <AlertCircle className="w-3 h-3" />
+                           <span>Positive value required</span>
+                        </div>
+                      )}
                    </div>
                 </div>
               </div>
