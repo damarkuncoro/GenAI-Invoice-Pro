@@ -1,5 +1,6 @@
+
 import React, { useRef } from 'react';
-import { Plus, Trash2, User, Hash, Percent, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle, FileText } from 'lucide-react';
+import { Plus, Trash2, User, Hash, Percent, Upload, X, Image as ImageIcon, AlignLeft, AlignCenter, AlignRight, Palette, AlertCircle, FileText, GripVertical } from 'lucide-react';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
 import { DatePicker } from './DatePicker';
@@ -14,6 +15,10 @@ const MAX_DESC_LENGTH = 300;
 const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeCurrency = CURRENCIES.find(c => c.code === data.currency) || CURRENCIES[0];
+
+  // Drag and Drop Refs
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
 
   const updateField = (field: keyof InvoiceData, value: any) => {
     onChange({ ...data, [field]: value });
@@ -39,6 +44,36 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
 
   const removeItem = (id: string) => {
     updateField('items', data.items.filter(item => item.id !== id));
+  };
+
+  const handleSort = () => {
+    // Duplicate check to prevent errors
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    if (dragItem.current === dragOverItem.current) return;
+
+    const _items = [...data.items];
+    const draggedItemContent = _items[dragItem.current];
+    
+    // Remove the item
+    _items.splice(dragItem.current, 1);
+    // Add it at the new position
+    _items.splice(dragOverItem.current, 0, draggedItemContent);
+
+    dragItem.current = null;
+    dragOverItem.current = null;
+    
+    updateField('items', _items);
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragItem.current = position;
+    // Set drag effect
+    e.dataTransfer.effectAllowed = "move";
+    // We can set a custom drag image here if we want, but default is usually fine
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, position: number) => {
+    dragOverItem.current = position;
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -336,94 +371,109 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
            <FileText className="w-4 h-4 text-brand-500"/> Items
         </h3>
         <div className="space-y-3">
-          {data.items.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row gap-2 items-start p-3 bg-gray-50 rounded-md border border-gray-100 group">
-              <div className="flex-grow space-y-2 w-full">
-                <div className="relative">
-                    <input 
-                      maxLength={MAX_DESC_LENGTH}
-                      placeholder="Description"
-                      value={item.description}
-                      onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                      className={`w-full p-2 pr-16 border rounded-md text-sm bg-white outline-none transition ${
-                          item.description.length >= MAX_DESC_LENGTH 
-                          ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100' 
-                          : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
-                      }`}
-                    />
-                    <div className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none transition-colors ${
-                        item.description.length >= MAX_DESC_LENGTH ? 'text-red-500 font-bold' : 'text-gray-400 opacity-50'
-                    }`}>
-                       {item.description.length}/{MAX_DESC_LENGTH}
+          {data.items.map((item, index) => (
+            <div 
+              key={item.id} 
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnter={(e) => handleDragEnter(e, index)}
+              onDragEnd={handleSort}
+              onDragOver={(e) => e.preventDefault()}
+              className="flex items-start gap-2 p-3 bg-gray-50 rounded-md border border-gray-100 group transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
+            >
+              {/* Drag Handle */}
+              <div className="mt-2 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing">
+                 <GripVertical className="w-4 h-4" />
+              </div>
+
+              <div className="flex-grow flex flex-col sm:flex-row gap-2 items-start w-full">
+                <div className="flex-grow space-y-2 w-full">
+                  <div className="relative">
+                      <input 
+                        maxLength={MAX_DESC_LENGTH}
+                        placeholder="Description"
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                        className={`w-full p-2 pr-16 border rounded-md text-sm bg-white outline-none transition ${
+                            item.description.length >= MAX_DESC_LENGTH 
+                            ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100' 
+                            : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'
+                        }`}
+                      />
+                      <div className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none transition-colors ${
+                          item.description.length >= MAX_DESC_LENGTH ? 'text-red-500 font-bold' : 'text-gray-400 opacity-50'
+                      }`}>
+                        {item.description.length}/{MAX_DESC_LENGTH}
+                      </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {data.showItemDates !== false && (
+                    <div className="w-32">
+                        <label className="text-[10px] text-gray-500 uppercase block mb-1">Date</label>
+                        <DatePicker 
+                          value={item.date || ''}
+                          onChange={(val) => updateItem(item.id, 'date', val)}
+                        />
                     </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                   {data.showItemDates !== false && (
-                   <div className="w-32">
-                      <label className="text-[10px] text-gray-500 uppercase block mb-1">Date</label>
-                      <DatePicker 
-                        value={item.date || ''}
-                        onChange={(val) => updateItem(item.id, 'date', val)}
-                      />
-                   </div>
-                   )}
-                   <div className="w-20 relative">
-                      <label className="text-[10px] text-gray-500 uppercase">Qty</label>
-                      <input 
-                        type="number" 
-                        min="0"
-                        step="0.01"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                        className={`w-full p-2 border rounded-md text-sm bg-white outline-none transition ${item.quantity < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
-                      />
-                      {item.quantity < 0 && (
-                        <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
-                           <AlertCircle className="w-3 h-3" />
-                           <span>Min 0</span>
-                        </div>
-                      )}
-                   </div>
-                   <div className="w-20">
-                      <label className="text-[10px] text-gray-500 uppercase">Unit</label>
-                      <input 
-                        type="text" 
-                        value={item.unit}
-                        onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
-                        placeholder="kg, pcs"
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
-                      />
-                   </div>
-                   <div className="w-28 flex-grow relative">
-                      <label className="text-[10px] text-gray-500 uppercase">Rate</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none font-medium">
-                          {activeCurrency.symbol}
-                        </span>
+                    )}
+                    <div className="w-20 relative">
+                        <label className="text-[10px] text-gray-500 uppercase">Qty</label>
                         <input 
                           type="number" 
                           min="0"
-                          value={item.rate}
-                          onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
-                          className={`w-full pl-9 pr-2 py-2 border rounded-md text-sm bg-white outline-none transition ${item.rate < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
+                          step="0.01"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                          className={`w-full p-2 border rounded-md text-sm bg-white outline-none transition ${item.quantity < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
                         />
-                      </div>
-                      {item.rate < 0 && (
-                        <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
-                           <AlertCircle className="w-3 h-3" />
-                           <span>Positive value required</span>
+                        {item.quantity < 0 && (
+                          <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Min 0</span>
+                          </div>
+                        )}
+                    </div>
+                    <div className="w-20">
+                        <label className="text-[10px] text-gray-500 uppercase">Unit</label>
+                        <input 
+                          type="text" 
+                          value={item.unit}
+                          onChange={(e) => updateItem(item.id, 'unit', e.target.value)}
+                          placeholder="kg, pcs"
+                          className="w-full p-2 border border-gray-300 rounded-md text-sm bg-white"
+                        />
+                    </div>
+                    <div className="w-28 flex-grow relative">
+                        <label className="text-[10px] text-gray-500 uppercase">Rate</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none font-medium">
+                            {activeCurrency.symbol}
+                          </span>
+                          <input 
+                            type="number" 
+                            min="0"
+                            value={item.rate}
+                            onChange={(e) => updateItem(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                            className={`w-full pl-9 pr-2 py-2 border rounded-md text-sm bg-white outline-none transition ${item.rate < 0 ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500'}`}
+                          />
                         </div>
-                      )}
-                   </div>
+                        {item.rate < 0 && (
+                          <div className="absolute top-full left-0 mt-1 flex items-center gap-1 text-[10px] text-red-500 font-medium whitespace-nowrap z-10 bg-white px-1 shadow-sm border border-red-100 rounded">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Positive value required</span>
+                          </div>
+                        )}
+                    </div>
+                  </div>
                 </div>
+                <button 
+                  onClick={() => removeItem(item.id)}
+                  className="mt-8 text-red-400 hover:text-red-600 p-1 rounded transition"
+                  title="Remove Item"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-              <button 
-                onClick={() => removeItem(item.id)}
-                className="mt-8 text-red-400 hover:text-red-600 p-1 rounded transition"
-                title="Remove Item"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))}
           <button 
@@ -440,23 +490,25 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
          <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
            <FileText className="w-4 h-4 text-brand-500"/> Notes & Terms
         </h3>
-        <div>
-           <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
-           <textarea 
-             value={data.notes}
-             onChange={(e) => updateField('notes', e.target.value)}
-             className="w-full p-2 border border-gray-300 rounded-md text-sm h-16 resize-none"
-             placeholder="e.g. Thanks for your business!"
-           />
-        </div>
-        <div>
-           <label className="block text-xs font-semibold text-gray-500 mb-1">Terms & Conditions</label>
-           <textarea 
-             value={data.terms}
-             onChange={(e) => updateField('terms', e.target.value)}
-             className="w-full p-2 border border-gray-300 rounded-md text-sm h-24 resize-none"
-             placeholder="e.g. Payment due in 14 days. Please include invoice number."
-           />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+               <label className="block text-xs font-semibold text-gray-500 mb-1">Notes</label>
+               <textarea 
+                 value={data.notes}
+                 onChange={(e) => updateField('notes', e.target.value)}
+                 className="w-full p-2 border border-gray-300 rounded-md text-sm h-32 resize-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+                 placeholder="e.g. Thanks for your business!"
+               />
+            </div>
+            <div>
+               <label className="block text-xs font-semibold text-gray-500 mb-1">Terms & Conditions</label>
+               <textarea 
+                 value={data.terms}
+                 onChange={(e) => updateField('terms', e.target.value)}
+                 className="w-full p-2 border border-gray-300 rounded-md text-sm h-32 resize-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+                 placeholder="e.g. Payment due in 14 days. Please include invoice number."
+               />
+            </div>
         </div>
       </div>
 

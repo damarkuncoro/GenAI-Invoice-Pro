@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { InvoiceData } from '../types';
 import { CURRENCIES } from '../constants';
@@ -154,17 +155,21 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data, containerId = "in
         </div>
 
         {/* Notes & Terms Footer */}
-        <div className="mt-auto pt-8 border-t border-gray-100 space-y-6">
-          {data.notes && (
-            <div>
-               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notes</h3>
-               <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.notes}</p>
-            </div>
-          )}
-          {data.terms && (
-            <div>
-               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Terms & Conditions</h3>
-               <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.terms}</p>
+        <div className="mt-auto">
+          {(data.notes || data.terms) && (
+            <div className="bg-gray-50 rounded-lg p-6 space-y-6">
+              {data.notes && (
+                <div>
+                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notes</h3>
+                   <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.notes}</p>
+                </div>
+              )}
+              {data.terms && (
+                <div>
+                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Terms & Conditions</h3>
+                   <p className="text-sm text-gray-600 whitespace-pre-wrap">{data.terms}</p>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@ import { InvoiceData, AppStatus, LineItem } from './types';
 import { INITIAL_INVOICE } from './constants';
 import InvoiceEditor from './components/InvoiceEditor';
 import InvoicePreview from './components/InvoicePreview';
-import { Printer, Download, Sparkles, Loader2, AlertCircle, Trash2, CheckCircle2, Layers, ArrowLeft, FileText, Archive } from 'lucide-react';
+import { Printer, Download, Sparkles, Loader2, AlertCircle, Trash2, CheckCircle2, Layers, ArrowLeft, FileText, Archive, Copy } from 'lucide-react';
 import { generateInvoiceFromText } from './services/geminiService';
 
 const STORAGE_KEY = 'genai-invoice-draft';
@@ -192,6 +192,26 @@ export default function App() {
     }
   };
 
+  const handleCopyInvoice = () => {
+    if (window.confirm("Duplicate this invoice?")) {
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0];
+        const dateCompact = dateStr.replace(/-/g, '');
+        // Random 3 digit suffix to avoid immediate collision
+        const suffix = Math.floor(Math.random() * 900 + 100).toString(); 
+        
+        const newInvoice: InvoiceData = {
+          ...invoice,
+          invoiceNumber: `INV-${dateCompact}-${suffix}`,
+          date: dateStr,
+          // Regenerate IDs for all items to avoid React key issues
+          items: invoice.items.map(item => ({ ...item, id: crypto.randomUUID() }))
+        };
+        
+        setInvoice(newInvoice);
+    }
+  };
+
   const handleSplitByDate = () => {
     if (invoice.items.length === 0) {
       alert("No items to split.");
@@ -308,6 +328,15 @@ export default function App() {
                   >
                     <Layers className="w-4 h-4 text-brand-500" />
                     <span className="hidden sm:inline">Split by Date</span>
+                  </button>
+
+                  <button 
+                    onClick={handleCopyInvoice}
+                    title="Duplicate Invoice"
+                    className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition text-sm font-medium border border-gray-200"
+                  >
+                    <Copy className="w-4 h-4 text-brand-500" />
+                    <span className="hidden sm:inline">Copy</span>
                   </button>
 
                   <button 
