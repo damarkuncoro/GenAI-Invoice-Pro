@@ -14,6 +14,7 @@ export const INITIAL_INVOICE: InvoiceData = {
   currency: 'IDR',
   taxRate: 11,
   showItemDates: true,
+  showTax: true,
   notes: 'Mohon transfer ke Bank BCA 1234567890 a/n URS Coffee. Terima kasih!',
   items: [
     {

@@ -19,8 +19,9 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
     }).format(amount);
   };
 
+  const showTax = data.showTax !== false;
   const subtotal = data.items.reduce((acc, item) => acc + (item.quantity * item.rate), 0);
-  const taxAmount = subtotal * (data.taxRate / 100);
+  const taxAmount = showTax ? subtotal * (data.taxRate / 100) : 0;
   const total = subtotal + taxAmount;
   
   const showDates = data.showItemDates !== false;
@@ -115,10 +116,12 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ data }) => {
               <span>Subtotal</span>
               <span>{formatMoney(subtotal)}</span>
             </div>
-             <div className="flex justify-between text-sm text-gray-600">
-              <span>Tax ({data.taxRate}%)</span>
-              <span>{formatMoney(taxAmount)}</span>
-            </div>
+            {showTax && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Tax ({data.taxRate}%)</span>
+                <span>{formatMoney(taxAmount)}</span>
+              </div>
+            )}
             <div className="border-t border-gray-200 pt-3 flex justify-between font-bold text-lg text-gray-900">
               <span>Total</span>
               <span>{formatMoney(total)}</span>

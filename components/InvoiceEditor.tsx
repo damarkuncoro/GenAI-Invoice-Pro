@@ -41,7 +41,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-8">
       
       {/* Settings Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Currency</label>
           <div className="relative">
@@ -57,19 +57,33 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
             </select>
           </div>
         </div>
+        
         <div>
-          <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Tax Rate (%)</label>
+          <div className="flex justify-between items-center mb-1">
+             <label className="block text-xs font-semibold text-gray-500 uppercase">Tax Rate (%)</label>
+             <label className="flex items-center gap-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={data.showTax !== false}
+                  onChange={(e) => updateField('showTax', e.target.checked)}
+                  className="w-3 h-3 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
+                />
+                <span className="text-[10px] text-gray-500">Enable Tax</span>
+            </label>
+          </div>
           <div className="relative">
-            <Percent className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Percent className={`absolute left-3 top-2.5 h-4 w-4 ${data.showTax !== false ? 'text-gray-400' : 'text-gray-200'}`} />
             <input 
               type="number"
+              disabled={data.showTax === false}
               value={data.taxRate}
               onChange={(e) => updateField('taxRate', parseFloat(e.target.value) || 0)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition"
+              className={`w-full pl-9 pr-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition ${data.showTax === false ? 'bg-gray-50 text-gray-400 border-gray-200' : 'border-gray-300'}`}
             />
           </div>
         </div>
-        <div className="pb-2">
+
+        <div className="flex items-end h-full pb-3">
            <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
