@@ -12,9 +12,45 @@ export default function App() {
   const [prompt, setPrompt] = useState<string>('');
   const [showAiModal, setShowAiModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownload = () => {
+    setIsDownloading(true);
+    const element = document.getElementById('invoice-preview-content');
+    
+    // @ts-ignore
+    if (typeof window.html2pdf === 'undefined') {
+        alert("PDF library is still loading, please try again in a moment.");
+        setIsDownloading(false);
+        return;
+    }
+
+    const opt = {
+      margin: 0,
+      filename: `Invoice-${invoice.invoiceNumber}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        scrollY: 0, // Critical fix: Force capturing from top of element
+        windowWidth: document.documentElement.offsetWidth, // Ensure full width capture
+        letterRendering: true
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // @ts-ignore
+    window.html2pdf().set(opt).from(element).save().then(() => {
+        setIsDownloading(false);
+    }).catch((err: any) => {
+        console.error("PDF generation failed", err);
+        setIsDownloading(false);
+    });
   };
 
   const handleAiGenerate = async () => {
@@ -73,11 +109,24 @@ export default function App() {
               <div className="h-6 w-px bg-gray-200 mx-1"></div>
 
               <button 
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition shadow-sm disabled:opacity-50"
+              >
+                {isDownloading ? (
+                   <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                   <Download className="w-4 h-4" />
+                )}
+                <span>PDF</span>
+              </button>
+
+              <button 
                 onClick={handlePrint}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-md text-sm font-medium hover:bg-gray-800 transition shadow-sm"
               >
                 <Printer className="w-4 h-4" />
-                <span>Print / PDF</span>
+                <span>Print</span>
               </button>
             </div>
           </div>
@@ -111,7 +160,7 @@ export default function App() {
                 <InvoicePreview data={invoice} />
                 
                 <div className="mt-8 text-center text-gray-400 text-xs no-print">
-                   <p>Tip: Use your browser's print settings to "Save as PDF".</p>
+                   <p>Tip: Use "PDF" button or Print > Save as PDF for best results.</p>
                 </div>
             </div>
           </div>

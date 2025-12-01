@@ -22,8 +22,11 @@ export interface InvoiceData {
   taxRate: number;
   showItemDates?: boolean;
   showTax?: boolean;
+  showDueDate?: boolean;
+  showNameWithLogo?: boolean;
   notes: string;
   items: LineItem[];
+  logoImage?: string;
 }
 
 export enum AppStatus {

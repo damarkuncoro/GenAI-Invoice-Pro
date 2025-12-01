@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye } from 'lucide-react';
+import React, { useRef } from 'react';
+import { Plus, Trash2, Calendar, FileText, User, MapPin, Hash, DollarSign, Percent, Eye, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { InvoiceData, LineItem } from '../types';
 import { CURRENCIES } from '../constants';
 
@@ -10,7 +10,8 @@ interface InvoiceEditorProps {
 }
 
 const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
-  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const updateField = (field: keyof InvoiceData, value: any) => {
     onChange({ ...data, [field]: value });
   };
@@ -35,6 +36,21 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
 
   const removeItem = (id: string) => {
     updateField('items', data.items.filter(item => item.id !== id));
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        updateField('logoImage', reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -83,7 +99,7 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
           </div>
         </div>
 
-        <div className="flex items-end h-full pb-3">
+        <div className="flex flex-col justify-end h-full pb-1 gap-2">
            <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
@@ -92,6 +108,15 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
               className="w-4 h-4 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
             />
             <span className="text-sm text-gray-700 font-medium">Show Dates on Items</span>
+          </label>
+           <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={data.showDueDate !== false}
+              onChange={(e) => updateField('showDueDate', e.target.checked)}
+              className="w-4 h-4 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
+            />
+            <span className="text-sm text-gray-700 font-medium">Show Due Date</span>
           </label>
         </div>
       </div>
@@ -126,9 +151,10 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
               <label className="block text-xs text-gray-500 mb-1">Due Date</label>
                <input 
                   type="date" 
+                  disabled={data.showDueDate === false}
                   value={data.dueDate}
                   onChange={(e) => updateField('dueDate', e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  className={`w-full p-2 border rounded-md text-sm ${data.showDueDate === false ? 'bg-gray-50 text-gray-400 border-gray-200' : 'border-gray-300'}`}
                 />
             </div>
          </div>
@@ -139,13 +165,77 @@ const InvoiceEditor: React.FC<InvoiceEditorProps> = ({ data, onChange }) => {
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
           <User className="w-4 h-4 text-brand-500"/> From (Sender)
         </h3>
+        
+        {/* Logo Upload */}
+        <div className="bg-gray-50 p-3 rounded-md border border-gray-100">
+           <div className="flex justify-between items-center mb-2">
+             <label className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1">
+               <ImageIcon className="w-3 h-3" /> Company Logo
+             </label>
+             {data.logoImage && (
+                <button 
+                  onClick={() => updateField('logoImage', '')}
+                  className="text-[10px] text-red-500 hover:text-red-700 flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" /> Remove
+                </button>
+             )}
+           </div>
+           
+           <div className="flex items-center gap-4">
+              {data.logoImage ? (
+                  <div className="relative bg-white border border-gray-200 rounded p-2 flex items-center justify-center h-16 w-auto min-w-[64px]">
+                      <img src={data.logoImage} alt="Logo preview" className="max-h-12 max-w-[150px] object-contain" />
+                  </div>
+              ) : (
+                 <div className="h-16 w-16 bg-white border border-dashed border-gray-300 rounded flex items-center justify-center text-gray-300">
+                    <ImageIcon className="w-6 h-6" />
+                 </div>
+              )}
+              
+              <div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleLogoUpload} 
+                />
+                <button 
+                  onClick={triggerFileInput}
+                  className="px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 transition flex items-center gap-2 shadow-sm"
+                >
+                  <Upload className="w-3 h-3" />
+                  {data.logoImage ? 'Change Logo' : 'Upload Logo'}
+                </button>
+                <p className="text-[10px] text-gray-400 mt-1">Replaces "Business Name" in invoice header</p>
+              </div>
+           </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-3">
-          <input 
-            placeholder="Business Name"
-            value={data.senderName}
-            onChange={(e) => updateField('senderName', e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md text-sm"
-          />
+          <div className="flex flex-col gap-1">
+             <div className="flex justify-between items-center">
+                 <label className="text-xs font-semibold text-gray-500">Business Name</label>
+                 {data.logoImage && (
+                    <label className="flex items-center gap-1 cursor-pointer select-none">
+                        <input
+                        type="checkbox"
+                        checked={data.showNameWithLogo || false}
+                        onChange={(e) => updateField('showNameWithLogo', e.target.checked)}
+                        className="w-3 h-3 text-brand-500 border-gray-300 rounded focus:ring-brand-500"
+                        />
+                        <span className="text-[10px] text-gray-500">Show with Logo</span>
+                    </label>
+                 )}
+             </div>
+             <input 
+                placeholder="Business Name"
+                value={data.senderName}
+                onChange={(e) => updateField('senderName', e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+             />
+          </div>
           <input 
              placeholder="Email"
              value={data.senderEmail}

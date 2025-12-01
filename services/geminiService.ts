@@ -17,9 +17,10 @@ export const generateInvoiceFromText = async (promptText: string): Promise<Parti
     1. If the text looks like raw data or a list, parse it into line items.
     2. Handle Indonesian/European number formats where a comma (,) is often used as a decimal separator (e.g., "0,5" means 0.5).
     3. Extract units of measurement (e.g., kg, liter, pcs, pack) if present.
-    4. Extract specific dates for line items if mentioned (e.g., "2023-10-25 Coffee...").
-    5. If information is missing, use reasonable placeholder data or leave blank. 
-    6. Today's date is ${new Date().toISOString().split('T')[0]}.
+    4. Extract specific dates for line items if mentioned.
+    5. GENERATE Invoice Number with format "INV-{YYYYMMDD}-{Sequence}" (e.g. INV-20231025-001) based on the Invoice Date.
+    6. For Line Items: If no specific date is mentioned for an item, generate a date for it that falls strictly within the range of the Invoice Date and the Due Date (inclusive).
+    7. Today's date is ${new Date().toISOString().split('T')[0]}.
     
     Text to process: "${promptText}"`,
     config: {
@@ -41,7 +42,7 @@ export const generateInvoiceFromText = async (promptText: string): Promise<Parti
             items: {
               type: Type.OBJECT,
               properties: {
-                date: { type: Type.STRING, description: "Item specific date in YYYY-MM-DD format if available" },
+                date: { type: Type.STRING, description: "Item specific date in YYYY-MM-DD format. Must be between Invoice Date and Due Date." },
                 description: { type: Type.STRING },
                 quantity: { type: Type.NUMBER },
                 unit: { type: Type.STRING, description: "Unit like kg, liter, pcs" },
