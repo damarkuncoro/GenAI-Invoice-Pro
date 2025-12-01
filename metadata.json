@@ -1,0 +1,5 @@
+{
+  "name": "GenAI Invoice Pro",
+  "description": "A professional invoice generator powered by Gemini AI. Create, edit, and print invoices with smart text-to-invoice extraction.",
+  "requestFramePermissions": []
+}
